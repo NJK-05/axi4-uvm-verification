@@ -72,6 +72,22 @@ interface axi4_if #(
 
     modport tb (clocking cb, input aclk, aresetn);
 
+    // Read-only clocking block for the monitor. A monitor must never drive
+    // anything, and critically it must see the *real* value of every signal
+    // -- including ones the driver's "cb" above only has as "output" (where
+    // reading the clockvar back gives you what you last drove, not the
+    // live wire). This separate all-input block gives the monitor a
+    // race-free, read-only view of the whole bus, sampled the same way
+    // (#1step) as the driver's writes are skewed.
+    clocking mcb @(posedge aclk);
+        default input #1step;
+        input awid, awaddr, awlen, awsize, awburst, awvalid, awready;
+        input wdata, wstrb, wlast, wvalid, wready;
+        input bid, bresp, bvalid, bready;
+        input arid, araddr, arlen, arsize, arburst, arvalid, arready;
+        input rid, rdata, rresp, rlast, rvalid, rready;
+    endclocking
+
     modport master (
         output awid, awaddr, awlen, awsize, awburst, awvalid,
         input  awready,
@@ -100,13 +116,6 @@ interface axi4_if #(
         input  aclk, aresetn
     );
 
-    modport monitor (
-        input awid, awaddr, awlen, awsize, awburst, awvalid, awready,
-        input wdata, wstrb, wlast, wvalid, wready,
-        input bid, bresp, bvalid, bready,
-        input arid, araddr, arlen, arsize, arburst, arvalid, arready,
-        input rid, rdata, rresp, rlast, rvalid, rready,
-        input aclk, aresetn
-    );
+    modport monitor (clocking mcb, input aclk, aresetn);
 
 endinterface
