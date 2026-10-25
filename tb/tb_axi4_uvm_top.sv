@@ -26,12 +26,13 @@ module tb_axi4_uvm_top;
         aclk    = 0;
         aresetn = 0;
         repeat (4) @(posedge aclk);
+        @(negedge aclk);
         aresetn = 1;
     end
 
     initial begin
         uvm_config_db#(virtual axi4_if)::set(null, "*", "vif", axi);
-        run_test("axi4_base_test");
+        run_test("axi4_directed_test");
     end
 
 endmodule

@@ -17,16 +17,19 @@ class axi4_base_test extends uvm_test;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         env = axi4_env::type_id::create("env", this);
+        uvm_top.set_timeout(5ms, 0);
     endfunction
 
-    task run_phase(uvm_phase phase);
+    virtual task run_stimulus();
         axi4_write_read_seq seq;
-        phase.raise_objection(this);
-
         seq = axi4_write_read_seq::type_id::create("seq");
         seq.start(env.agent.sequencer);
+    endtask
 
-        #100; // let the read response settle before ending the test
+    task run_phase(uvm_phase phase);
+        phase.raise_objection(this);
+        run_stimulus();
+        wait (env.sb.items_checked == env.agent.driver.items_done);
         phase.drop_objection(this);
     endtask
 

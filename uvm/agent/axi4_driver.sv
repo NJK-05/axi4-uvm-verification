@@ -9,6 +9,7 @@ class axi4_driver extends uvm_driver #(axi4_transaction);
     `uvm_component_utils(axi4_driver)
 
     virtual axi4_if vif;
+    int unsigned items_done;
 
     function new(string name, uvm_component parent);
         super.new(name, parent);
@@ -27,11 +28,15 @@ class axi4_driver extends uvm_driver #(axi4_transaction);
         vif.cb.arvalid <= 1'b0;
         vif.cb.rready  <= 1'b0;
 
+        wait (vif.aresetn === 1'b1);
+        @(vif.cb);
+
         forever begin
             axi4_transaction tr;
             seq_item_port.get_next_item(tr);
             if (tr.is_write) drive_write(tr);
             else             drive_read(tr);
+            items_done++;
             seq_item_port.item_done();
         end
     endtask
@@ -76,10 +81,11 @@ class axi4_driver extends uvm_driver #(axi4_transaction);
         vif.cb.arvalid <= 1'b0;
 
         tr.data = new[tr.len + 1];
+        tr.resp = 2'b00;
         for (int i = 0; i <= tr.len; i++) begin
             while (!vif.cb.rvalid) @(vif.cb);
             tr.data[i] = vif.cb.rdata;
-            tr.resp    = vif.cb.rresp;
+            tr.resp    = tr.resp | vif.cb.rresp;
             @(vif.cb);
         end
         `uvm_info("AXI4_DRIVER", $sformatf("completed %s", tr.convert2string()), UVM_HIGH)

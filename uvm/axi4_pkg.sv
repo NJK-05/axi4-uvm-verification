@@ -11,9 +11,16 @@ package axi4_pkg;
     `include "axi4_driver.sv"
     `include "axi4_monitor.sv"
     `include "axi4_agent.sv"
+    `include "axi4_scoreboard.sv"
+    `include "axi4_coverage.sv"
     `include "axi4_env.sv"
     `include "axi4_write_read_seq.sv"
+    `include "axi4_directed_seq.sv"
+    `include "axi4_rand_seq.sv"
     `include "axi4_base_test.sv"
+    `include "axi4_directed_test.sv"
+    `include "axi4_rand_test.sv"
+    `include "axi4_cross_test.sv"
 
 endpackage
 

@@ -49,6 +49,8 @@ class axi4_monitor extends uvm_monitor;
                 do @(vif.mcb); while (!(vif.mcb.wvalid && vif.mcb.wready));
                 tr.data[i] = vif.mcb.wdata;
                 tr.strb[i] = vif.mcb.wstrb;
+                if (vif.mcb.wlast !== (i == tr.len))
+                    `uvm_error("AXI4_MONITOR", $sformatf("WLAST=%0b on beat %0d of %0d", vif.mcb.wlast, i, tr.len + 1))
             end
 
             do @(vif.mcb); while (!(vif.mcb.bvalid && vif.mcb.bready));
@@ -77,7 +79,9 @@ class axi4_monitor extends uvm_monitor;
             for (int i = 0; i <= tr.len; i++) begin
                 do @(vif.mcb); while (!(vif.mcb.rvalid && vif.mcb.rready));
                 tr.data[i] = vif.mcb.rdata;
-                tr.resp    = vif.mcb.rresp;
+                tr.resp    = tr.resp | vif.mcb.rresp;
+                if (vif.mcb.rlast !== (i == tr.len))
+                    `uvm_error("AXI4_MONITOR", $sformatf("RLAST=%0b on beat %0d of %0d", vif.mcb.rlast, i, tr.len + 1))
             end
 
             `uvm_info("AXI4_MONITOR", $sformatf("observed %s", tr.convert2string()), UVM_HIGH)
