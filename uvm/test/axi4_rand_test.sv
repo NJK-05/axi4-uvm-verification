@@ -15,6 +15,11 @@ class axi4_rand_test extends axi4_base_test;
         super.new(name, parent);
     endfunction
 
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        vif.allow_4k_cross = allow_4k_cross;
+    endfunction
+
     task run_stimulus();
         axi4_rand_seq seq;
         seq = axi4_rand_seq::type_id::create("seq");

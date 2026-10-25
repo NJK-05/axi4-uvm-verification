@@ -9,6 +9,9 @@ interface axi4_if #(
 
     localparam STRB_WIDTH = DATA_WIDTH/8;
 
+    bit          allow_4k_cross = 1'b0;
+    int unsigned sva_errors     = 0;
+
     // Write address channel
     logic [ID_WIDTH-1:0]   awid;
     logic [ADDR_WIDTH-1:0] awaddr;

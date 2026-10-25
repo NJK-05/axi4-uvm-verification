@@ -20,6 +20,8 @@ module tb_axi4_uvm_top;
         .MEM_DEPTH_BYTES(4096)
     ) dut (.axi(axi.slave));
 
+    axi4_protocol_checker chk (.axi(axi));
+
     always #5 aclk = ~aclk;
 
     initial begin

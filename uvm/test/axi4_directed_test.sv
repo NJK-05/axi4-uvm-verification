@@ -12,6 +12,11 @@ class axi4_directed_test extends axi4_base_test;
         super.new(name, parent);
     endfunction
 
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        vif.allow_4k_cross = 1'b1;
+    endfunction
+
     task run_stimulus();
         axi4_directed_seq seq;
         seq = axi4_directed_seq::type_id::create("seq");

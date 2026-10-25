@@ -9,6 +9,7 @@ class axi4_base_test extends uvm_test;
     `uvm_component_utils(axi4_base_test)
 
     axi4_env env;
+    virtual axi4_if vif;
 
     function new(string name = "axi4_base_test", uvm_component parent = null);
         super.new(name, parent);
@@ -17,7 +18,16 @@ class axi4_base_test extends uvm_test;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         env = axi4_env::type_id::create("env", this);
+        if (!uvm_config_db#(virtual axi4_if)::get(this, "", "vif", vif))
+            `uvm_fatal("NOVIF", {"virtual interface must be set for: ", get_full_name(), ".vif"})
         uvm_top.set_timeout(5ms, 0);
+    endfunction
+
+    function void check_phase(uvm_phase phase);
+        super.check_phase(phase);
+        if (vif.sva_errors != 0) begin
+            `uvm_error("SVA", $sformatf("%0d protocol assertion failure(s), see [SVA] lines in the log", vif.sva_errors))
+        end
     endfunction
 
     virtual task run_stimulus();
