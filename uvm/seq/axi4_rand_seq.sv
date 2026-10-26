@@ -60,6 +60,7 @@ class axi4_rand_seq extends uvm_sequence #(axi4_transaction);
             else if (r < 90) begin lo = 0;    hi = 4031; end
             else             begin lo = 4096; hi = 4159; end
         end
+        if ($urandom_range(99, 0) < 8) begin lo = 4096; hi = 4096; end
     endfunction
 
     task body();

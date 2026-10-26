@@ -1,3 +1,7 @@
+`ifndef BUG_ID
+`define BUG_ID 0
+`endif
+
 module axi4_slave_mem #(
     parameter ADDR_WIDTH      = 32,
     parameter DATA_WIDTH      = 32,
@@ -8,6 +12,7 @@ module axi4_slave_mem #(
 );
 
     localparam STRB_WIDTH = DATA_WIDTH/8;
+    localparam int BUG    = `BUG_ID;
 
     typedef enum logic [1:0] {RESP_OKAY = 2'b00, RESP_SLVERR = 2'b10} axi_resp_t;
     typedef enum logic [1:0] {BURST_FIXED = 2'b00, BURST_INCR = 2'b01, BURST_WRAP = 2'b10} axi_burst_t;
@@ -25,10 +30,10 @@ module axi4_slave_mem #(
         logic [ADDR_WIDTH-1:0] wrap_size;
         logic [ADDR_WIDTH-1:0] wrap_boundary;
         aligned_addr = (addr >> size) << size;
-        incr_addr    = aligned_addr + (1 << size);
+        incr_addr    = aligned_addr + ((BUG == 9) ? 32'd4 : (1 << size));
         unique case (burst)
-            BURST_FIXED: next_addr = addr;
-            BURST_WRAP: begin
+            BURST_FIXED: next_addr = (BUG == 3) ? incr_addr : addr;
+            BURST_WRAP: if (BUG == 2) next_addr = incr_addr; else begin
                 wrap_size     = (len + 1) << size;
                 wrap_boundary = (addr / wrap_size) * wrap_size + wrap_size;
                 next_addr     = (incr_addr == wrap_boundary) ? (wrap_boundary - wrap_size) : incr_addr;
@@ -66,14 +71,14 @@ module axi4_slave_mem #(
     logic                  wr_oob;
 
     assign wr_next = next_addr(wr_addr, wr_size, wr_burst, wr_len);
-    assign wr_oob  = (wr_addr >= MEM_DEPTH_BYTES);
+    assign wr_oob  = (BUG == 7) ? (wr_addr > MEM_DEPTH_BYTES) : (wr_addr >= MEM_DEPTH_BYTES);
 
     always_ff @(posedge axi.aclk or negedge axi.aresetn) begin
         if (!axi.aresetn) begin
             wr_state    <= W_IDLE;
             axi.awready <= 1'b0;
             axi.wready  <= 1'b0;
-            axi.bvalid  <= 1'b0;
+            if (BUG != 10) axi.bvalid <= 1'b0;
             axi.bresp   <= RESP_OKAY;
             axi.bid     <= '0;
         end else begin
@@ -96,9 +101,9 @@ module axi4_slave_mem #(
 
                 W_DATA: begin
                     if (axi.wvalid && axi.wready) begin
-                        if (!wr_oob) begin
+                        if (!wr_oob && !(BUG == 8 && axi.wlast)) begin
                             for (int b = 0; b < STRB_WIDTH; b++) begin
-                                if (axi.wstrb[b])
+                                if (axi.wstrb[b] || BUG == 1)
                                     mem[word_base(wr_addr) + b] <= axi.wdata[b*8 +: 8];
                             end
                         end
@@ -108,8 +113,8 @@ module axi4_slave_mem #(
                         if (axi.wlast) begin
                             axi.wready <= 1'b0;
                             axi.bvalid <= 1'b1;
-                            axi.bid    <= wr_id;
-                            axi.bresp  <= (wr_err || wr_oob) ? RESP_SLVERR : RESP_OKAY;
+                            axi.bid    <= (BUG == 6) ? '0 : wr_id;
+                            axi.bresp  <= ((wr_err || wr_oob) && BUG != 4) ? RESP_SLVERR : RESP_OKAY;
                             wr_state   <= W_RESP;
                         end
                     end
@@ -164,7 +169,7 @@ module axi4_slave_mem #(
                         axi.rvalid  <= 1'b1;
                         axi.rid     <= axi.arid;
                         axi.rdata   <= read_word(axi.araddr);
-                        axi.rresp   <= (axi.araddr >= MEM_DEPTH_BYTES) ? RESP_SLVERR : RESP_OKAY;
+                        axi.rresp   <= (axi.araddr >= MEM_DEPTH_BYTES && BUG != 5) ? RESP_SLVERR : RESP_OKAY;
                         axi.rlast   <= (axi.arlen == 8'd0);
                         rd_state    <= R_DATA;
                     end

@@ -65,6 +65,10 @@ class axi4_coverage extends uvm_subscriber #(axi4_transaction);
             bins oob      = {[32'd4096:$]};
         }
 
+        cp_edge: coverpoint t.addr {
+            bins first_oob = {32'd4096};
+        }
+
         cp_align: coverpoint t.addr[1:0] {
             bins aligned   = {2'b00};
             bins unaligned = {[2'b01:2'b11]};
@@ -95,6 +99,8 @@ class axi4_coverage extends uvm_subscriber #(axi4_transaction);
         cx_dir_region: cross cp_dir, cp_region;
 
         cx_size_align: cross cp_size, cp_align;
+
+        cx_dir_edge: cross cp_dir, cp_edge;
     endgroup
 
     function new(string name, uvm_component parent);
@@ -137,10 +143,10 @@ class axi4_coverage extends uvm_subscriber #(axi4_transaction);
         `uvm_info("COV", $sformatf("  strb full %0.1f  partial %0.1f  zero %0.1f",
                                    cg.cp_strb_full.get_inst_coverage(), cg.cp_strb_partial.get_inst_coverage(),
                                    cg.cp_strb_zero.get_inst_coverage()), UVM_LOW)
-        `uvm_info("COV", $sformatf("  cross burst_size %0.1f  burst_len %0.1f  dir_resp %0.1f  dir_region %0.1f  size_align %0.1f",
+        `uvm_info("COV", $sformatf("  cross burst_size %0.1f  burst_len %0.1f  dir_resp %0.1f  dir_region %0.1f  size_align %0.1f  dir_edge %0.1f",
                                    cg.cx_burst_size.get_inst_coverage(), cg.cx_burst_len.get_inst_coverage(),
                                    cg.cx_dir_resp.get_inst_coverage(), cg.cx_dir_region.get_inst_coverage(),
-                                   cg.cx_size_align.get_inst_coverage()), UVM_LOW)
+                                   cg.cx_size_align.get_inst_coverage(), cg.cx_dir_edge.get_inst_coverage()), UVM_LOW)
         `uvm_info("COV", "burst x len hits; cols: len0 len1 len2_3 len4_7 len8_15 len16_up", UVM_LOW)
         for (int b = 0; b < 3; b++) begin
             `uvm_info("COV", $sformatf("  %s: %0d %0d %0d %0d %0d %0d", (b == 0) ? "FIXED" : (b == 1) ? "INCR " : "WRAP ",
