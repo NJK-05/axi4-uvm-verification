@@ -19,18 +19,25 @@ A full AXI4 slave (not AXI4-Lite) verified with a UVM 1.2 environment on Xilinx 
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    SEQ[Sequences] --> SQR[Sequencer] --> DRV[Driver]
+    DRV -->|cb| IF{{axi4_if}}
+    IF <--> DUT[AXI4 slave DUT]
+    IF -->|mcb| MON[Monitor]
+    MON --> SB[Scoreboard<br/>reference model]
+    MON --> COV[Functional<br/>coverage]
+    IF -.-> SVA[SVA protocol<br/>checker]
+    subgraph UVM environment
+        SQR
+        DRV
+        MON
+        SB
+        COV
+    end
 ```
-                      +---------------------------- UVM env ----------------------------+
- sequence --> sequencer --> driver ----+                                                  |
-                                       v                                                  |
-                                axi4_if (cb / mcb) <--> DUT (axi4_slave_mem)              |
-                                       |                                                  |
-                       monitor --------+--> scoreboard (reference model)                  |
-                          |                                                               |
-                          +-------------> functional coverage                             |
-                      +-----------------------------------------------------------------+
- SVA protocol checker watches the same interface and reports through the test
-```
+
+The driver and monitor use separate clocking blocks (`cb`, `mcb`) to avoid races with the DUT. The SVA checker sits on the same interface and reports failures through the test.
 
 ## Repository layout
 
